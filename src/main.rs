@@ -1,10 +1,11 @@
-use anyhow::{Context, Error};
+use anyhow::Context;
 use config::{load_config, save_config};
 use log::debug;
 use tui::main_menu;
 
 extern crate core;
 extern crate crossterm;
+extern crate dirs;
 extern crate serde;
 extern crate serde_yaml;
 
@@ -17,9 +18,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config_path = "config.yaml";
     debug!("Loading configuration from {}", config_path);
 
-    let config = load_config(config_path).with_context(|| "Failed to load configuration")?;
+    let mut config = load_config(config_path).with_context(|| "Failed to load configuration")?;
 
-    main_menu(&config)?;
+    main_menu(&mut config)?;
 
     save_config(config_path, &config).with_context(|| "Failed to save configuration")?;
 

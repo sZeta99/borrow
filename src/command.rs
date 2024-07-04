@@ -13,16 +13,6 @@ pub fn execute_command(command: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn show_recent(commands: &mut [Command]) {
-    commands.sort_by_key(|cmd| cmd.last_used.clone());
-    commands.reverse();
-}
-
-pub fn show_most_used(commands: &mut [Command]) {
-    commands.sort_by_key(|cmd| cmd.usage_count);
-    commands.reverse();
-}
-
 pub fn fuzzy_search<'a>(commands: &'a [Command], query: &str) -> Vec<&'a Command> {
     let matcher = SkimMatcherV2::default();
     let mut results: Vec<_> = commands

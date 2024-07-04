@@ -1,30 +1,43 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use std::fs;
+use std::{fs, path::Path};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Command {
     pub command: String,
-    pub usage_count: u32,
-    pub last_used: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
+    pub windows: Vec<Window>,
+}
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+pub struct Window {
+    pub name: String,
     pub commands: Vec<Command>,
-    pub windows: Vec<String>,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            commands: Vec::new(),
-            windows: vec!["Most Recent".to_string(), "Most Used".to_string()],
+            windows: vec![Window {
+                name: "Recent".to_string(),
+                commands: vec![Command {
+                    command: "ll".to_string(),
+                }],
+            }],
         }
     }
 }
 
 pub fn load_config(file_path: &str) -> Result<Config> {
+    if !Path::new(file_path).exists() {
+        let default_config = Config::default();
+        save_config(file_path, &default_config)
+            .with_context(|| format!("Failed to create default config file: {}", file_path))?;
+        return Ok(default_config);
+    }
+
     let config_content = fs::read_to_string(file_path)
         .with_context(|| format!("Failed to read config file: {}", file_path))?;
     let config: Config =
