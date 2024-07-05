@@ -2,30 +2,34 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-pub struct Command {
-    pub command: String,
-}
+use crate::tui::read_bash_history;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     pub windows: Vec<Window>,
 }
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Window {
     pub name: String,
-    pub commands: Vec<Command>,
+    pub commands: Vec<String>,
+    pub selected: usize,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            windows: vec![Window {
-                name: "Recent".to_string(),
-                commands: vec![Command {
-                    command: "ll".to_string(),
-                }],
-            }],
+            windows: vec![
+                Window {
+                    name: "Recent".to_string(),
+                    commands: read_bash_history(0, 20).unwrap(),
+                    selected: 0,
+                },
+                Window {
+                    name: "Recent-2".to_string(),
+                    commands: read_bash_history(20, 40).unwrap(),
+                    selected: 0,
+                },
+            ],
         }
     }
 }
