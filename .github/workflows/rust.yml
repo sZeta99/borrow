@@ -27,6 +27,10 @@ jobs:
         file: "./Cargo.toml"
     - name: Use Version Output
       run: echo ${{ steps.crate-version.outputs.version }}
+    - name: Bump crate version
+      uses: thomaseizinger/set-crate-version@master
+      with:
+        version: ${{ steps.crate-version.outputs.version }}
   format:
     runs-on: ubuntu-latest
     steps:
