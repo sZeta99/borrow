@@ -20,6 +20,13 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Crate Version
+      id: crate-version
+      uses: colathro/crate-version@1.0.0
+      with:
+        file: "./Cargo.toml"
+    - name: Use Version Output
+      run: echo ${{ steps.crate-version.outputs.version }}
   format:
     runs-on: ubuntu-latest
     steps:
@@ -30,3 +37,4 @@ jobs:
       - uses: mbrobbel/rustfmt-check@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+    
