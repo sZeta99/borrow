@@ -1,6 +1,7 @@
 use std::io;
 
 use anyhow::Context;
+use arboard::Clipboard;
 use config::{load_config, save_config};
 use crossterm::{
     execute,
@@ -9,12 +10,6 @@ use crossterm::{
 use log::debug;
 use ratatui::{backend::CrosstermBackend, Terminal};
 use tui::App;
-
-extern crate core;
-extern crate crossterm;
-extern crate dirs;
-extern crate serde;
-extern crate serde_yaml;
 
 pub mod command;
 pub mod config;
@@ -44,7 +39,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     save_config(config_path, &app.config).with_context(|| "Failed to save configuration")?;
 
     if let Some(command) = command {
-        println!("{}", command)
+        let mut clipboard = Clipboard::new()?;
+
+        clipboard.set_text(&command)?;
+        println!("now the clipboard text should be: \"{}\"", command);
     }
     Ok(())
 }
