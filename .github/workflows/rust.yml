@@ -1,0 +1,44 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Crate Version
+      id: crate-version
+      uses: colathro/crate-version@1.0.0
+      with:
+        file: "./Cargo.toml"
+    - name: Use Version Output
+      run: echo ${{ steps.crate-version.outputs.version }}
+    - name: Bump crate version
+      uses: thomaseizinger/set-crate-version@master
+      with:
+        version: ${{ steps.crate-version.outputs.version }}
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: mbrobbel/rustfmt-check@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+    
