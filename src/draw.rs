@@ -5,7 +5,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::config::Window;
+use crate::window::Window;
 
 pub fn draw_window(f: &mut Frame, window: &Window) {
     let size = f.size();

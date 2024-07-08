@@ -10,11 +10,12 @@ use crossterm::{
 use log::debug;
 use ratatui::{backend::CrosstermBackend, Terminal};
 use tui::App;
+use window::Windows;
 
-pub mod command;
 pub mod config;
 pub mod draw;
 pub mod tui;
+pub mod window;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
@@ -31,6 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         config,
         terminal,
         selected: 0,
+        windows: Windows::new(),
     };
     let command = app.main_menu()?;
     disable_raw_mode()?;

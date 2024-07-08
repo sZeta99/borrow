@@ -1,20 +1,18 @@
 use anyhow::{Context, Result};
 use crossterm::event::{self, KeyCode};
 
-use log::info;
 use ratatui::{backend::CrosstermBackend, Terminal};
-use std::{
-    fs,
-    io::{self, Stdout},
-};
+use std::{fs, io::Stdout};
 
 use crate::{
-    config::{Config, Window},
+    config::Config,
     draw::{draw_menu, draw_window},
+    window::Windows,
 };
 
 pub struct App {
     pub config: Config,
+    pub windows: Windows,
     pub terminal: Terminal<CrosstermBackend<Stdout>>,
     pub selected: usize,
 }
@@ -22,13 +20,13 @@ impl App {
     pub fn main_menu(&mut self) -> Result<Option<String>> {
         loop {
             self.terminal
-                .draw(|f| draw_menu(f, &self.config.windows, self.selected))?;
+                .draw(|f| draw_menu(f, &self.windows.windows, self.selected))?;
 
             if let event::Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('q') => break,
                     KeyCode::Down => {
-                        if self.selected < self.config.windows.len() - 1 {
+                        if self.selected < self.windows.windows.len() - 1 {
                             self.selected += 1;
                         }
                     }
@@ -50,7 +48,7 @@ impl App {
     }
 
     fn window(&mut self, window: usize) -> Result<Option<String>> {
-        let window = &mut self.config.windows[window];
+        let window = &mut self.windows.windows[window];
 
         loop {
             self.terminal.draw(|f| draw_window(f, window))?;
