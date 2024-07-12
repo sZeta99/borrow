@@ -2,8 +2,6 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
 
-use crate::tui::read_bash_history;
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     pub command_history_path: String,
@@ -12,7 +10,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            command_history_path: "../Recent_command.txt".to_owned(),
+            command_history_path: "~/.bash_history".to_owned(),
         }
     }
 }

@@ -37,7 +37,7 @@ impl App {
                     }
                     KeyCode::Enter => {
                         // Enter the selected window
-                        return self.window(self.selected);
+                        let _ = self.window(self.selected);
                     }
                     _ => {}
                 }
