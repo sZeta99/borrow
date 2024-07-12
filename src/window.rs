@@ -10,6 +10,7 @@ pub struct Window {
     pub name: String,
     pub commands: Vec<String>,
     pub selected: usize,
+    // TODO: path is use to open with vim
     pub path: PathBuf,
 }
 
@@ -24,6 +25,12 @@ impl Windows {
             windows: Vec::new(),
         };
         s.load_from_path().expect("Failed to parse");
+        s.windows.push(Window::new(
+            "history".to_owned(),
+            Self::read_bash_history(0, 100).unwrap(),
+            100,
+            PathBuf::new(),
+        ));
         s
     }
 
@@ -81,6 +88,30 @@ impl Windows {
             .with_context(|| format!("Failed to read window file: {:?}", path))?;
 
         Ok(commands)
+    }
+    fn read_bash_history(start: usize, end: usize) -> Result<Vec<String>> {
+        let home_dir = dirs::home_dir()
+            .ok_or_else(|| anyhow::anyhow!("Failed to determine home directory"))?;
+        let history_file = home_dir.join(".bash_history");
+        let history_content = fs::read_to_string(&history_file)
+            .with_context(|| format!("Failed to read bash history file: {:?}", history_file))?;
+
+        let all_commands: Vec<String> = history_content
+            .lines()
+            .map(|line| line.to_string())
+            .collect();
+        let total_commands = all_commands.len();
+
+        if start >= total_commands || end >= total_commands || start > end {
+            return Err(anyhow::anyhow!("Invalid start or end indices"));
+        }
+
+        let rev_start = total_commands - end - 1;
+        let rev_end = total_commands - start;
+
+        let recent_commands = all_commands[rev_start..rev_end].to_vec();
+
+        Ok(recent_commands)
     }
 }
 

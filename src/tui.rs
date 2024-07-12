@@ -1,8 +1,17 @@
-use anyhow::{Context, Result};
-use crossterm::event::{self, KeyCode};
+use anyhow::{anyhow, Context, Error, Result};
+use crossterm::{
+    event::{self, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
 
 use ratatui::{backend::CrosstermBackend, Terminal};
-use std::{fs, io::Stdout};
+use std::{
+    io::{self, stdout, Stdout},
+    os::unix::process::CommandExt,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 use crate::{
     config::Config,
@@ -25,18 +34,42 @@ impl App {
             if let event::Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('q') => break,
+                    KeyCode::Char('v') => {
+                        // TODO: open vim for selected window
+                        disable_raw_mode()?;
+                        execute!(self.terminal.backend_mut(), LeaveAlternateScreen)?;
+
+                        Self::run_vim(&self.windows.windows[self.selected].path)?;
+
+                        execute!(self.terminal.backend_mut(), EnterAlternateScreen)?;
+                        enable_raw_mode()?;
+                    }
+                    KeyCode::Char('V') => {
+                        disable_raw_mode()?;
+                        execute!(self.terminal.backend_mut(), LeaveAlternateScreen)?;
+                        self.terminal.show_cursor()?;
+                        Self::run_vim(&self.windows.windows[self.selected].path)?;
+                        enable_raw_mode()?;
+                        execute!(self.terminal.backend_mut(), EnterAlternateScreen)?;
+
+                        break;
+                    }
+
                     KeyCode::Down => {
                         if self.selected < self.windows.windows.len() - 1 {
                             self.selected += 1;
+                        } else {
+                            self.selected = 0;
                         }
                     }
                     KeyCode::Up => {
                         if self.selected > 0 {
                             self.selected -= 1;
+                        } else {
+                            self.selected = self.windows.windows.len() - 1;
                         }
                     }
                     KeyCode::Enter => {
-                        // Enter the selected window
                         let _ = self.window(self.selected);
                     }
                     _ => {}
@@ -56,17 +89,43 @@ impl App {
             if let event::Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('q') => break,
+                    KeyCode::Char('v') => {
+                        // TODO: open vim for this window
+                        Self::run_vim(&window.path)?;
+                    }
+                    KeyCode::Char('V') => {
+                        disable_raw_mode()?;
+                        execute!(self.terminal.backend_mut(), LeaveAlternateScreen)?;
+                        self.terminal.show_cursor()?;
+                        Self::run_vim(&window.path)?;
+                        enable_raw_mode()?;
+                        execute!(self.terminal.backend_mut(), EnterAlternateScreen)?;
+
+                        break;
+                    }
+
                     KeyCode::Down => {
                         if window.selected < window.commands.len() - 1 {
-                            window.selected += &1;
+                            window.selected += 1;
+                        } else {
+                            window.selected = 0;
                         }
                     }
                     KeyCode::Up => {
                         if window.selected > 0 {
                             window.selected -= 1;
+                        } else {
+                            window.selected = window.commands.len() - 1;
                         }
                     }
-                    KeyCode::Enter => return Ok(Some(window.commands[window.selected].clone())),
+                    KeyCode::Enter => {
+                        //disable_raw_mode()?;
+                        //execute!(self.terminal.backend_mut(), LeaveAlternateScreen)?;
+                        //self.terminal.show_cursor()?;
+                        //Self::run_command(window.commands[window.selected].clone(), None)?;
+                        return Ok(Some(window.commands[window.selected].clone()));
+                    }
+
                     _ => {}
                 }
             }
@@ -74,20 +133,24 @@ impl App {
 
         Ok(None)
     }
-}
-pub fn read_bash_history(start: usize, end: usize) -> Result<Vec<String>> {
-    let home_dir =
-        dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Failed to determine home directory"))?;
-    let history_file = home_dir.join(".bash_history");
-    let history_content = fs::read_to_string(&history_file)
-        .with_context(|| format!("Failed to read bash history file: {:?}", history_file))?;
 
-    let recent_commands: Vec<String> = history_content
-        .lines()
-        .skip(start)
-        .take(end - start + 1)
-        .map(|line| line.to_string())
-        .collect();
+    fn run_vim(file: &Path) -> Result<(), Error> {
+        let file = file
+            .to_str()
+            .ok_or_else(|| anyhow::anyhow!("File path is not valid"))?;
 
-    Ok(recent_commands)
+        // Err(anyhow::anyhow!(Command::new("vim").arg(file).exec()))
+        let status = Command::new("vim")
+            .arg(file)
+            .status()
+            .with_context(|| "Failed to execute vim")?;
+
+        if !status.success() {
+            return Err(anyhow::anyhow!("vim did not exit successfully"));
+        }
+        Ok(())
+    }
+    fn run_command(command: String, _scope: Option<String>) -> Result<(), Error> {
+        Err(anyhow::anyhow!(Command::new(command).exec()))
+    }
 }

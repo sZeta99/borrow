@@ -1,6 +1,9 @@
-use std::io;
+use std::{
+    io::{self, Stdout},
+    process::Stdio,
+};
 
-use anyhow::Context;
+use anyhow::{Context, Error};
 use arboard::Clipboard;
 use config::{load_config, save_config};
 use crossterm::{
@@ -8,7 +11,10 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use log::debug;
-use ratatui::{backend::CrosstermBackend, Terminal};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    Terminal,
+};
 use tui::App;
 use window::Windows;
 
@@ -17,7 +23,7 @@ pub mod draw;
 pub mod tui;
 pub mod window;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Error> {
     env_logger::init();
     let config_path = "config.yaml";
     debug!("Loading configuration from {}", config_path);
@@ -28,6 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
+
     let mut app = App {
         config,
         terminal,
